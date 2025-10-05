@@ -169,7 +169,6 @@ export function Dashboard() {
 
   // Navigate to Add Recipe page
   const handleAddRecipe = () => {
-    // This will be implemented in future stories
     window.location.href = "/recipes/new";
   };
 
