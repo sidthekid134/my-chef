@@ -17,6 +17,8 @@
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.9.17",
+    "axios": "^1.6.7",
+    "cheerio": "^1.0.0-rc.12",
     "expo": "~50.0.0",
     "expo-sqlite": "~13.2.2",
     "expo-status-bar": "~1.11.0",

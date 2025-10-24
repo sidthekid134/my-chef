@@ -1,14 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ImportRecipeScreen } from './index';
 
+type AddRecipeStackParamList = {
+  Manual: undefined;
+  Import: undefined;
+};
+
+const Stack = createNativeStackNavigator<AddRecipeStackParamList>();
+
+// Main AddRecipe Navigator component
 const AddRecipeScreen: React.FC = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Manual"
+        component={ManualAddRecipeScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Import"
+        component={ImportRecipeScreen}
+        options={{
+          title: 'Import Recipe from URL',
+          headerStyle: {
+            backgroundColor: '#FF6B6B',
+          },
+          headerTintColor: '#fff',
+        }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+// Manual recipe entry screen
+const ManualAddRecipeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
       <ScrollView style={styles.scrollView}>
         <View style={styles.header}>
           <Text style={styles.title}>Add New Recipe</Text>
+        </View>
+
+        <View style={styles.importContainer}>
+          <Text style={styles.importText}>Have a recipe URL?</Text>
+          <TouchableOpacity
+            style={styles.importButton}
+            onPress={() => navigation.navigate('Import')}
+          >
+            <Text style={styles.importButtonText}>Import from URL</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.formContainer}>
