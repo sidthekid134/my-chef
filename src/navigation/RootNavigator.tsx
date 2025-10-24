@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +12,7 @@ import SettingsScreen from '../screens/Settings';
 // Define types for the navigation
 export type RootStackParamList = {
   Main: undefined;
-  RecipeDetails: { recipeId: string };
+  RecipeDetails: { recipeId: number };
 };
 
 export type BottomTabParamList = {
@@ -75,6 +76,15 @@ const RootNavigator = () => {
         name="Main"
         component={BottomTabNavigator}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="RecipeDetails"
+        component={() => (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text>Recipe Details Screen (Placeholder)</Text>
+          </View>
+        )}
+        options={{ title: 'Recipe Details' }}
       />
     </Stack.Navigator>
   );

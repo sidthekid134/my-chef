@@ -1,35 +1,163 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  SafeAreaView,
+  FlatList,
+  ActivityIndicator,
+  RefreshControl,
+  TouchableOpacity
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+
+// Custom components
+import RecipeCard from '../../components/Recipe/RecipeCard';
+import EmptyState from '../../components/UI/EmptyState';
+import SearchBar from '../../components/UI/SearchBar';
+
+// Store and models
+import { useRecipeStore } from '../../store/recipeStore';
+import { Recipe } from '../../data/models/RecipeModels';
+
+// Theming
+import { colors, spacing, shadows } from '../../utils/theme';
 
 const DashboardScreen: React.FC = () => {
-  // This will be replaced with actual recipe data in a future story
-  const placeholderData = [
-    { id: '1', name: 'Placeholder Recipe 1' },
-    { id: '2', name: 'Placeholder Recipe 2' },
-    { id: '3', name: 'Placeholder Recipe 3' },
-  ];
+  const navigation = useNavigation<any>();
+
+  // Zustand store
+  const {
+    recipes,
+    isLoading,
+    pagination,
+    searchTerm,
+    error,
+    fetchRecipes,
+    searchRecipes,
+    resetSearch,
+    refreshRecipes
+  } = useRecipeStore();
+
+  // Local state
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch recipes when component mounts
+  useEffect(() => {
+    fetchRecipes(0);
+  }, [fetchRecipes]);
+
+  // Handle search
+  const handleSearch = (term: string) => {
+    if (term.trim()) {
+      searchRecipes(term);
+    } else {
+      resetSearch();
+    }
+  };
+
+  // Handle recipe press
+  const handleRecipePress = (recipe: Recipe) => {
+    // Navigate to recipe details screen when implemented
+    navigation.navigate('RecipeDetails', { recipeId: recipe.id });
+  };
+
+  // Handle add recipe
+  const handleAddRecipe = () => {
+    navigation.navigate('AddRecipe');
+  };
+
+  // Handle refresh (pull to refresh)
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshRecipes();
+    setRefreshing(false);
+  }, [refreshRecipes]);
+
+  // Handle pagination (infinite scroll)
+  const handleLoadMore = () => {
+    if (!isLoading && pagination.hasMore) {
+      const nextPage = Math.floor(pagination.offset / pagination.limit) + 1;
+      fetchRecipes(nextPage);
+    }
+  };
+
+  // Render footer (loading indicator for pagination)
+  const renderFooter = () => {
+    if (!isLoading || recipes.length === 0) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.primary} />
+      </View>
+    );
+  };
+
+  // Render empty component
+  const renderEmpty = () => {
+    if (isLoading && recipes.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      );
+    }
+
+    return (
+      <EmptyState
+        icon="restaurant-outline"
+        title={searchTerm ? "No matching recipes" : "No recipes yet"}
+        message={
+          searchTerm
+            ? "Try searching with different keywords"
+            : "Add your first recipe by tapping the + button"
+        }
+        actionText={searchTerm ? "Clear Search" : undefined}
+        onAction={searchTerm ? resetSearch : undefined}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="auto" />
-      <View style={styles.header}>
-        <Text style={styles.title}>My Recipes</Text>
-      </View>
-      <FlatList
-        data={placeholderData}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.recipeCard}>
-            <Text style={styles.recipeTitle}>{item.name}</Text>
-          </View>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No recipes yet</Text>
-          </View>
-        }
+
+      <SearchBar
+        value={searchTerm}
+        onChangeText={(text) => searchRecipes(text)}
+        onSearch={handleSearch}
+        onClear={resetSearch}
       />
+
+      <FlatList
+        data={recipes}
+        keyExtractor={(item) => item.id?.toString() || ''}
+        renderItem={({ item }) => (
+          <RecipeCard recipe={item} onPress={handleRecipePress} />
+        )}
+        ListEmptyComponent={renderEmpty()}
+        ListFooterComponent={renderFooter()}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+        contentContainerStyle={recipes.length === 0 ? styles.emptyList : null}
+      />
+
+      {/* Floating Action Button for adding recipes */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleAddRecipe}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="add" size={28} color="white" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -37,41 +165,35 @@ const DashboardScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
-  header: {
-    padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  recipeCard: {
-    backgroundColor: '#f9f9f9',
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-    elevation: 1,
-  },
-  recipeTitle: {
-    fontSize: 18,
-    fontWeight: '500',
-  },
-  emptyContainer: {
+  centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: spacing.xl,
   },
-  emptyText: {
-    fontSize: 18,
-    color: '#666',
+  emptyList: {
+    flexGrow: 1,
   },
+  footerLoader: {
+    padding: spacing.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fab: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    right: spacing.lg,
+    bottom: spacing.lg,
+    backgroundColor: colors.primary,
+    borderRadius: 28,
+    elevation: 8,
+    ...shadows.large,
+  }
 });
 
 export default DashboardScreen;
